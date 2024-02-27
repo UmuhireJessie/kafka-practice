@@ -2,16 +2,16 @@ import { Kafka } from "kafkajs";
 
 const kafka = new Kafka({
   clientId: "user-app",
-  brokers: ["localhost:9092"],
+  brokers: ["localhost:9092", "localhost:9093"],
 });
 
-const postKafka = async (payload) => {
+const postKafka = async (topic, payload) => {
   const producer = kafka.producer();
 
   await producer.connect();
   await producer
     .send({
-      topic: 'user-topic',
+      topic,
       messages: [{ value: JSON.stringify(payload) }],
     })
     .then(() => {

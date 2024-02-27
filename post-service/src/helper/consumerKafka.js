@@ -1,31 +1,33 @@
-import kafka from "kafka-node";
+import kafka from "./kfakaConfig";
 
-// Configure Kafka client
-const createConsumer = (topics) => {
-  const client = new kafka.KafkaClient({ kafkaHost: 'localhost:9092' });
-  const consumer = new kafka.Consumer(client, topics);
+const consumer = kafka.consumer({ groupId: "userGroup" });
 
-  return consumer;
-}
+const consumeKafka = (topic, groupId) => {
+  return new Promise(async (resolve, reject) => {
+    await consumer.connect();
+    await consumer.subscribe({ topic, fromBeginning: true });
 
-// Listen to Kafka messages
-const consumeMessages = (consumer) => {
-  return new Promise((resolve, reject) => {
-    const messages = [];
+    await consumer.run({
+      eachMessage: async ({ topic, partition, message }) => {
+        const value = message.value.toString();
+        // Commit the offset
+        await consumer.commitOffsets([
+          { topic, partition, offset: message.offset },
+        ]);
 
-    consumer.on("message", (message) => {
-      messages.push(JSON.parse(message.value));
+        resolve(value);
+      },
     });
 
-    consumer.on("error", (error) => {
-      console.error("Error while consuming Kafka message:", error);
+    consumer.on("consumer.crash", (error) => {
       reject(error);
-    });
-
-    consumer.on("done", () => {
-      resolve(messages);
     });
   });
 };
 
-export { createConsumer, consumeMessages }
+const stopConsumer = async () => {
+  await consumer.disconnect();
+  console.log("Consumer stopped");
+};
+
+export { consumeKafka, stopConsumer };

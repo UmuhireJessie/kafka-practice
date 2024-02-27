@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from "uuid";
 import model from "../database/models";
-import { createConsumer, consumeMessages } from "../helper/consumerKafka";
+import { consumeKafka, stopConsumer } from "../helper/consumerKafka";
 
 const Post = model.Post;
 
@@ -23,13 +23,14 @@ const addPost = async (req, res) => {
         message: "post_exists",
       });
     }
-    const topics = [{ topic: "user-topic" }];
-    const consumer = createConsumer(topics);
 
     // Consume messages from the topic
-    consumeMessages(consumer)
+    consumeKafka('user-topic', "test-group" )
       .then((messages) => {
-        console.log("Received messages:", messages);
+        console.log("Received messages:", JSON.parse(messages));
+        stopConsumer().catch((error) => {
+          console.error("Error while stopping consumer:", error);
+        });
       })
       .catch((error) => {
         console.error("Error while consuming messages:", error);

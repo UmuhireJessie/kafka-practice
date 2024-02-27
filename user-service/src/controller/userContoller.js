@@ -38,7 +38,7 @@ const addUser = async (req, res) => {
             //     messages: JSON.stringify({ data }),
             //   },
             // ];
-            postKafka(data)
+            postKafka('user-topic', data)
             res.status(201).json({
               status: 'success',
               data,
